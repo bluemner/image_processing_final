@@ -23,31 +23,29 @@ class Pixel3d{
         int x;
         int y;
         unsigned char z; //height
-        int * state;
+        int state;
         int distance;
         std::vector<betacore::Pixel3d> neighbors;
 public:
     Pixel3d(int x, int y, unsigned intensity ){
-        this->state = new int();
-        *(this->state) = STATE_INI;
+     
+        this->state = STATE_INI;
         this->x = x;
         this->y = y;
         this->z = intensity;
     }
     Pixel3d(){
-         this->state = new int();
-        *(this->state) = STATE_DUMMY;
+    
+        this->state = STATE_DUMMY;
     }
     ~Pixel3d(){
-        // if(this->state != nullptr)
-        //     delete this->state;
-        // this->state = nullptr;
+
     }
     void set_state(const int state){
-        *(this->state) = state;
+        this->state = state;
     }
     int get_state(){
-        int temp = *(this->state);
+        int temp = this->state;
         return temp;
     }
     void add_neighbor(Pixel3d &n){
