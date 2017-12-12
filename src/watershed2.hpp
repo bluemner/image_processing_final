@@ -19,11 +19,11 @@ class watershed2
 {
 	private:
 		int threshold;
+		int neighborhood;
 		static const int PIXEL_MIN =  000;
 		static const int PIXEL_MAX =  256;
 		int height;
 		int width;
-		int mask_size;
 		int watershed_count;
 		int current_state;
 		std::vector<unsigned char> image;
@@ -48,14 +48,9 @@ class watershed2
 
 				}
 			}
-			int mp = (int)  mask_size / 2;
-			#ifdef DEBUG
-				std::cout<<"Adding neighbors"<< std::endl;
-			#endif
-			
-
+	
 		}
-		 void segment(){
+		void segment(){
 			 int current_distance;
 			 for(size_t intensity =0;  intensity < sorted_pixels.size(); intensity++){
 				
@@ -101,33 +96,33 @@ class watershed2
 					for(size_t i =0; i <  neighbor_pixels.size(); ++i ){
 						auto neighbor = neighbor_pixels[i];
 						if (neighbor->distance <= current_distance && 
-                           (neighbor->state > 0 || neighbor->state == watershed_pixel::STATE_WATERSHED))
-                        {
-                            if (neighbor->state > 0)
-                            {
-                                // the commented condition is also in the original algorithm 
-                                // but it also gives incomplete borders
-                                if (p->state == watershed_pixel::STATE_VISITED /*|| p.Label == WatershedCommon.WSHED*/) 
-                                    p->state = neighbor->state;
-                                else if (p->state != neighbor->state)
-                                {
-                                    p->state = watershed_pixel::STATE_WATERSHED;
-                                    watershed_count++;
-                                }
-                            }
-                            else if (p->state == watershed_pixel::STATE_VISITED)
-                            {
-                                p->state = watershed_pixel::STATE_WATERSHED;
-                                watershed_count++;
-                            }
-                        }
-                        // plateau 
-                        else if (neighbor->state == watershed_pixel::STATE_VISITED && neighbor->distance == 0)
-                        {
-                            neighbor->distance = current_distance + 1;
+						   (neighbor->state > 0 || neighbor->state == watershed_pixel::STATE_WATERSHED))
+						{
+							if (neighbor->state > 0)
+							{
+								// the commented condition is also in the original algorithm 
+								// but it also gives incomplete borders
+								if (p->state == watershed_pixel::STATE_VISITED /*|| p.Label == WatershedCommon.WSHED*/) 
+									p->state = neighbor->state;
+								else if (p->state != neighbor->state)
+								{
+									p->state = watershed_pixel::STATE_WATERSHED;
+									watershed_count++;
+								}
+							}
+							else if (p->state == watershed_pixel::STATE_VISITED)
+							{
+								p->state = watershed_pixel::STATE_WATERSHED;
+								watershed_count++;
+							}
+						}
+						// plateau 
+						else if (neighbor->state == watershed_pixel::STATE_VISITED && neighbor->distance == 0)
+						{
+							neighbor->distance = current_distance + 1;
 							
-                            fifo_queue.push(neighbor);
-                        }
+							fifo_queue.push(neighbor);
+						}
 					}
 				}
 				
@@ -136,32 +131,32 @@ class watershed2
 					auto pixel = sorted_pixels[intensity][i];
 					pixel->distance = 0;
 					// if true then p is inside a new minimum 
-                    if (pixel->state == watershed_pixel::STATE_VISITED)
-                    {
-                        // create new label
-                        current_state++;
-                        pixel->state = current_state;
+					if (pixel->state == watershed_pixel::STATE_VISITED)
+					{
+						// create new label
+						current_state++;
+						pixel->state = current_state;
 						
-                        fifo_queue.push(pixel);
-                        while (!fifo_queue.empty())
-                        {
-                            auto q = fifo_queue.front();
+						fifo_queue.push(pixel);
+						while (!fifo_queue.empty())
+						{
+							auto q = fifo_queue.front();
 							fifo_queue.pop();
-                            // check neighbors of q
-                            auto neighbor_pixels = neighbors(*q);
-                            for(size_t j =0; j <  neighbor_pixels.size(); ++j ){
+							// check neighbors of q
+							auto neighbor_pixels = neighbors(*q);
+							for(size_t j =0; j <  neighbor_pixels.size(); ++j ){
 								auto neighbor = neighbor_pixels[j];
-                            
-                                if (neighbor->state == watershed_pixel::STATE_VISITED)
-                                {
-                                    neighbor->state = current_state;
+							
+								if (neighbor->state == watershed_pixel::STATE_VISITED)
+								{
+									neighbor->state = current_state;
 									
-                                    fifo_queue.push(neighbor);
-                                }
-                            }
+									fifo_queue.push(neighbor);
+								}
+							}
 						
-                        }
-                    }
+						}
+					}
 				}
 
 			 }
@@ -171,47 +166,66 @@ class watershed2
 		 std::vector<watershed_pixel*> neighbors(watershed_pixel &px){
 			 
 			 std::vector<watershed_pixel*> temp;
-			 
-			 /*
-			   |-1,-1|0,-1|1,-1|
-			   |-1, 0| PX |1, 0|
-			   |-1,+1|0,+1|1,+1|
-			 */
-			  // -1, -1                
-			if ((px.x - 1) >= 0 && (px.y - 1) >= 0)
-				temp.push_back(pixels[offset((px.x - 1), (px.y - 1))]);
-			//  0, -1
-			if ((px.y - 1) >= 0)
-				temp.push_back(pixels[ offset(px.x,(px.y - 1))]);
-			//  1, -1
-			if ((px.x + 1) < this->width && (px.y - 1) >= 0)
-				temp.push_back(pixels[offset((px.x + 1),(px.y - 1))]);
-			// -1, 0
-			if ((px.x - 1) >= 0)
-				temp.push_back(pixels[offset((px.x - 1), px.y)]);
-			//  1, 0
-			if ((px.x + 1) < this->width)
-				temp.push_back(pixels[offset((px.x + 1), px.y)]);
-			// -1, 1
-			if ((px.x - 1) >= 0 && (px.y + 1) < this->height)
-				temp.push_back(pixels[offset((px.x - 1),(px.y + 1))]);
-			//  0, 1
-			if ((px.y + 1) < this->height)
-				temp.push_back(pixels[offset(px.x,(px.y + 1))]);
-			//  1, 1
-			if ((px.x + 1) < this->width && (px.y + 1) < this->height)
-				temp.push_back(pixels[offset((px.x + 1), (px.y + 1))]);
+			 if(neighborhood ==8){
+				/*
+				|-1,-1|0,-1|1,-1|
+				|-1, 0| PX |1, 0|
+				|-1,+1|0,+1|1,+1|
+				*/
+				// -1, -1                
+				if ((px.x - 1) >= 0 && (px.y - 1) >= 0)
+					temp.push_back(pixels[offset((px.x - 1), (px.y - 1))]);
+				//  0, -1
+				if ((px.y - 1) >= 0)
+					temp.push_back(pixels[ offset(px.x,(px.y - 1))]);
+				//  1, -1
+				if ((px.x + 1) < this->width && (px.y - 1) >= 0)
+					temp.push_back(pixels[offset((px.x + 1),(px.y - 1))]);
+				// -1, 0
+				if ((px.x - 1) >= 0)
+					temp.push_back(pixels[offset((px.x - 1), px.y)]);
+				//  1, 0
+				if ((px.x + 1) < this->width)
+					temp.push_back(pixels[offset((px.x + 1), px.y)]);
+				// -1, 1
+				if ((px.x - 1) >= 0 && (px.y + 1) < this->height)
+					temp.push_back(pixels[offset((px.x - 1),(px.y + 1))]);
+				//  0, 1
+				if ((px.y + 1) < this->height)
+					temp.push_back(pixels[offset(px.x,(px.y + 1))]);
+				//  1, 1
+				if ((px.x + 1) < this->width && (px.y + 1) < this->height)
+					temp.push_back(pixels[offset((px.x + 1), (px.y + 1))]);
+			 }else{
+				 /*
+						|     |0,-1|     |
+						|-1, 0| px |+1, 0|
+						|     |0,+1|     |
+				*/
+				//  -1, 0
+				if ((px.x - 1) >= 0)
+					temp.push_back(pixels[offset((px.x - 1),px.y)]);
+				//  0, -1
+				if ((px.y - 1) >= 0)
+					temp.push_back(pixels[offset(px.x,(px.y - 1))]);
+				//  1, 0
+				if ((px.x + 1) < width)
+					temp.push_back(pixels[offset((px.x + 1),px.y)]);
+				//  0, 1
+				if ((px.y + 1) < height)
+					temp.push_back(pixels[offset(px.x,  (px.y + 1))]);
+			 }
 			return temp;
 		 }
 	public:
 		watershed2(const std::vector<unsigned char> &image,
 				  int height,
 				  int width,
-				  int mask_size){
+				  int neighborhood){
 			std::copy(image.begin(), image.end(),std::back_inserter(this->image));
 			this->width = width;
 			this->height = height;
-			this->mask_size = mask_size;
+			this->neighborhood = neighborhood;
 			//this->result = &result;
 			this->watershed_count = 0;
 			this->current_state =0;
@@ -235,13 +249,13 @@ class watershed2
 		void get_filter(std::vector<unsigned char> &filter){
 		
 			for (int y = 0; y < this->height; y++)
-            {
+			{
 				for (int x = 0; x < this->width; x++)
 				{
 					// if the pixel in our map is watershed pixel then draw it
 					if (pixels[offset(x,y)]->state == watershed_pixel::STATE_WATERSHED){
 						filter.at(y*width+x) = (unsigned char)PIXEL_MAX-1;
-						std::cout<< "Here"<<std::endl;
+				
 					}						
 					else 
 						filter[y*width+x] = PIXEL_MIN;

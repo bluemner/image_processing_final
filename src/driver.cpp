@@ -9,15 +9,15 @@ int main(int argc, char *argv[]){
 		std::cout<< "Useage:"
 				 <<"\n\targ_1 (string): name of source image"
 				 <<"\n\targ_2 (string): name of result image" 
-				 <<"\n\targ_3 (int): size of mask (odd number)"
+				 <<"\n\targ_3 (int): size of neighborhood (odd number)"
 				 << std::endl;
 	}
 	
 	std::string source_image =  std::string(argv[1]);
 	std::string result_image =  std::string(argv[2]);
-	int mask_size  = std::stoi(argv[3]);
-	if (mask_size % 2 == 0){
-		std::cout<< "mask size must be odd" <<std::endl;
+	int neighborhood  = std::stoi(argv[3]);
+	if (neighborhood  != 4 && neighborhood !=8){
+		std::cout<< "neighborhood must be 4 or 8" <<std::endl;
 		return -1;
 	}
 	std::vector<unsigned char>  image;
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
 	UWM::PGM().read(source_image, image, x_dimension, y_dimension);
 	result.resize(x_dimension*y_dimension);
 	std::cout<<"Running watershed"<<std::endl;
-	betacore::watershed2 w(image,y_dimension,x_dimension,mask_size);
+	betacore::watershed2 w(image,y_dimension,x_dimension,neighborhood);
 	std::cout<<"Done with watershed!"<<std::endl;
 	std::cout<<"Saving..."<<std::endl;
 	w.get_filter(result);
