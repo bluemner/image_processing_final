@@ -25,6 +25,7 @@ int main(int argc, char *argv[]){
 	int x_dimension, y_dimension;
 	std::vector<unsigned char> result;
 	UWM::PGM().read(source_image, image, x_dimension, y_dimension);
+	result.resize(x_dimension*y_dimension);
 	std::cout<<"Running watershed"<<std::endl;
 	betacore::watershed2 w(image,y_dimension,x_dimension,mask_size);
 	std::cout<<"Done with watershed!"<<std::endl;

@@ -27,9 +27,9 @@ class watershed2
 		int watershed_count;
 		int current_state;
 		std::vector<unsigned char> image;
-		std::map<int,std::shared_ptr<watershed_pixel>> pixels;
-		std::vector<std::vector<watershed_pixel>> sorted_pixels;
-		std::queue<std::shared_ptr<watershed_pixel>> fifo_queue;
+		std::map<int,watershed_pixel*> pixels;
+		std::vector<std::vector<watershed_pixel*>> sorted_pixels;
+		std::queue<watershed_pixel*> fifo_queue;
 		watershed_pixel DUMMY;
 		watershed_pixel *dummy;
 		void setup(){
@@ -43,9 +43,8 @@ class watershed2
 				for(int j=0; j< height; j++){
 					watershed_pixel *pixel = new watershed_pixel(i,j,image[j*width+i]);
 					int id = (j*width+i);
-					pixels.insert(std::pair<int,std::shared_ptr<watershed_pixel>>
-										    (id,std::shared_ptr<watershed_pixel>(pixel)));
-					sorted_pixels[pixel->height].push_back(*pixel);
+					pixels.insert(std::pair<int,watershed_pixel*>  (id,pixel));
+					sorted_pixels[pixel->height].push_back(pixel);
 
 				}
 			}
@@ -62,22 +61,22 @@ class watershed2
 				
 				//Part 1: Get all pixels at the current intensity
 				for(size_t i =0; i <  sorted_pixels[intensity].size(); ++i ){
-					auto pixel =  &sorted_pixels[intensity][i];
+					auto pixel =  sorted_pixels[intensity][i];
 					pixel->state  = watershed_pixel::STATE_VISITED;
-					std::vector<std::shared_ptr<watershed_pixel>> neighbor_pixels = neighbors(*pixel);
+					auto neighbor_pixels = neighbors(*pixel);
 					//initialize queue with n at intensity of current basins or watersheds
 					for(auto neighbor : neighbor_pixels){
 						if (neighbor->state > 0 || neighbor->state == watershed_pixel::STATE_WATERSHED)
 						{
 							pixel->distance = 1;
-							fifo_queue.push(std::shared_ptr<watershed_pixel>(pixel));
+							fifo_queue.push(pixel);
 							break;
 						}
 					}
 				}
 
-				current_distance = 1;		
-				fifo_queue.push(std::shared_ptr<watershed_pixel>(dummy));
+				current_distance = 1;
+				fifo_queue.push(dummy);
 				// Part 2 extending the basins
 				bool loop_true = true ;
 				while(loop_true){
@@ -91,14 +90,14 @@ class watershed2
 						}
 						else{
 							
-							fifo_queue.push(std::shared_ptr<watershed_pixel>(dummy));
+							fifo_queue.push(dummy);
 							current_distance++;
 							p = fifo_queue.front();
 							fifo_queue.pop();
 						}
 					}
 
-					std::vector<std::shared_ptr<watershed_pixel>> neighbor_pixels = neighbors(*p);
+					auto neighbor_pixels = neighbors(*p);
 					for(size_t i =0; i <  neighbor_pixels.size(); ++i ){
 						auto neighbor = neighbor_pixels[i];
 						if (neighbor->distance <= current_distance && 
@@ -127,14 +126,14 @@ class watershed2
                         {
                             neighbor->distance = current_distance + 1;
 							
-                            fifo_queue.push(std::shared_ptr<watershed_pixel>(neighbor));
+                            fifo_queue.push(neighbor);
                         }
 					}
 				}
 				
 				// Part 3 find new minima at current intensity
 				for(size_t i=0; i < sorted_pixels[intensity].size(); i++){
-					auto pixel = &sorted_pixels[intensity][i];
+					auto pixel = sorted_pixels[intensity][i];
 					pixel->distance = 0;
 					// if true then p is inside a new minimum 
                     if (pixel->state == watershed_pixel::STATE_VISITED)
@@ -143,13 +142,13 @@ class watershed2
                         current_state++;
                         pixel->state = current_state;
 						
-                        fifo_queue.push(std::shared_ptr<watershed_pixel>(pixel));
+                        fifo_queue.push(pixel);
                         while (!fifo_queue.empty())
                         {
                             auto q = fifo_queue.front();
 							fifo_queue.pop();
                             // check neighbors of q
-                            std::vector<std::shared_ptr<watershed_pixel>> neighbor_pixels = neighbors(*q);
+                            auto neighbor_pixels = neighbors(*q);
                             for(size_t j =0; j <  neighbor_pixels.size(); ++j ){
 								auto neighbor = neighbor_pixels[j];
                             
@@ -157,7 +156,7 @@ class watershed2
                                 {
                                     neighbor->state = current_state;
 									
-                                    fifo_queue.push(std::shared_ptr<watershed_pixel>(neighbor));
+                                    fifo_queue.push(neighbor);
                                 }
                             }
 						
@@ -169,9 +168,9 @@ class watershed2
 		 }
 		 
 
-		 std::vector<std::shared_ptr<watershed_pixel>> neighbors(watershed_pixel &px){
+		 std::vector<watershed_pixel*> neighbors(watershed_pixel &px){
 			 
-			 std::vector<std::shared_ptr<watershed_pixel>> temp;
+			 std::vector<watershed_pixel*> temp;
 			 
 			 /*
 			   |-1,-1|0,-1|1,-1|
@@ -180,28 +179,28 @@ class watershed2
 			 */
 			  // -1, -1                
 			if ((px.x - 1) >= 0 && (px.y - 1) >= 0)
-				temp.push_back(pixels[get_formatted_pair((px.x - 1), (px.y - 1))]);
+				temp.push_back(pixels[offset((px.x - 1), (px.y - 1))]);
 			//  0, -1
 			if ((px.y - 1) >= 0)
-				temp.push_back(pixels[ get_formatted_pair(px.x,(px.y - 1))]);
+				temp.push_back(pixels[ offset(px.x,(px.y - 1))]);
 			//  1, -1
 			if ((px.x + 1) < this->width && (px.y - 1) >= 0)
-				temp.push_back(pixels[get_formatted_pair((px.x + 1),(px.y - 1))]);
+				temp.push_back(pixels[offset((px.x + 1),(px.y - 1))]);
 			// -1, 0
 			if ((px.x - 1) >= 0)
-				temp.push_back(pixels[get_formatted_pair((px.x - 1), px.y)]);
+				temp.push_back(pixels[offset((px.x - 1), px.y)]);
 			//  1, 0
 			if ((px.x + 1) < this->width)
-				temp.push_back(pixels[get_formatted_pair((px.x + 1), px.y)]);
+				temp.push_back(pixels[offset((px.x + 1), px.y)]);
 			// -1, 1
 			if ((px.x - 1) >= 0 && (px.y + 1) < this->height)
-				temp.push_back(pixels[get_formatted_pair((px.x - 1),(px.y + 1))]);
+				temp.push_back(pixels[offset((px.x - 1),(px.y + 1))]);
 			//  0, 1
 			if ((px.y + 1) < this->height)
-				temp.push_back(pixels[get_formatted_pair(px.x,(px.y + 1))]);
+				temp.push_back(pixels[offset(px.x,(px.y + 1))]);
 			//  1, 1
 			if ((px.x + 1) < this->width && (px.y + 1) < this->height)
-				temp.push_back(pixels[get_formatted_pair((px.x + 1), (px.y + 1))]);
+				temp.push_back(pixels[offset((px.x + 1), (px.y + 1))]);
 			return temp;
 		 }
 	public:
@@ -221,7 +220,7 @@ class watershed2
 			segment();
 		   
 		}
-		int get_formatted_pair(int x,int y){
+		int offset(int x,int y){
 			return y*width+x;
 		}   
 		std::string to_string(){
@@ -234,18 +233,16 @@ class watershed2
 		}
 
 		void get_filter(std::vector<unsigned char> &filter){
-			if(filter.size() != (width * height)){
-				filter.empty();
-				filter.clear();
-				filter.resize(width * height);
-			}
+		
 			for (int y = 0; y < this->height; y++)
             {
 				for (int x = 0; x < this->width; x++)
 				{
 					// if the pixel in our map is watershed pixel then draw it
-					if (pixels[get_formatted_pair(x,y)]->state == watershed_pixel::STATE_WATERSHED)
-						filter[y*width+x] = PIXEL_MAX;
+					if (pixels[offset(x,y)]->state == watershed_pixel::STATE_WATERSHED){
+						filter.at(y*width+x) = (unsigned char)PIXEL_MAX-1;
+						std::cout<< "Here"<<std::endl;
+					}						
 					else 
 						filter[y*width+x] = PIXEL_MIN;
 				}
