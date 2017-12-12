@@ -5,6 +5,19 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Driver Windows",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/bin/driver.exe",
+			"args": ["${workspaceFolder}/data/test-img2.pgm",
+				"${workspaceFolder}/bin/test-img2_ws_filter.pgm",
+				"3"],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false
+		},
+		{
 			"name": "Driver Linux",
 			"type": "cppdbg",
 			"request": "launch",

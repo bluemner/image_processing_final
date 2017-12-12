@@ -9,7 +9,7 @@
 #include <iterator>
 #include <algorithm>
 #include <numeric>
-
+#include <memory>
 namespace betacore
 {
 
@@ -25,7 +25,7 @@ class Pixel3d{
         unsigned char z; //height
         int state;
         int distance;
-        std::vector<betacore::Pixel3d> neighbors;
+        std::vector<std::shared_ptr<Pixel3d>> neighbors;
 public:
     Pixel3d(int x, int y, unsigned intensity ){
      
@@ -48,15 +48,15 @@ public:
         int temp = this->state;
         return temp;
     }
-    void add_neighbor(Pixel3d &n){
-        neighbors.push_back(n);
+    void add_neighbor(Pixel3d *n){
+        neighbors.push_back(std::shared_ptr<Pixel3d>(n));
     }
     bool operator< (const Pixel3d &other) const {
         return this->z < other.z;
     }
     bool neighbors_sate_is_watershed(){
         for(auto n : this->neighbors){
-            if(n.get_state() == Pixel3d::STATE_WATERSHED){
+            if(n->get_state() == Pixel3d::STATE_WATERSHED){
                 return true;
             }
         }
@@ -88,7 +88,7 @@ class Watershed
         std::queue<Pixel3d> fifo_queue;
         std::vector<unsigned char> *result;
         void setup(){
-             #ifdef DEBUG
+            #ifdef DEBUG
             std::cout<<"Adding Pixels"<< std::endl;
             #endif
             for(int i=0; i < width; i++){
@@ -98,24 +98,46 @@ class Watershed
 
                 }
             }
-            int mp;
+            int mp = (int)  mask_size / 2;
             #ifdef DEBUG
                 std::cout<<"Adding neighbors"<< std::endl;
             #endif
-            for(int i=0; i < width; i++){
-                for(int j=0; j< height; j++){
-                    auto temp = pixels.at(j*width+i);
-                    mp = (int)  mask_size / 2;
-                    for(int p=i-mp; p < i+mp;++p){
-                        for(int v=j-mp;v < j+mp; ++v){
-                            if(p > 0 && p < this->width &&
-                               v > 0 && v < this->height){
-                               temp.add_neighbor(pixels[v*this->width+p]);
-                            }
-                        }
-                    }
+			int xm,xp,ym,yp;
+			Pixel3d *temp;
+            for(int x=0; x < width; x++){
+                for(int y=0; y< height; y++){
+                    temp = &pixels[y*width+x];
+
+					xm = x-1;
+				    xp = x+1;
+					yp = y+1;
+					ym = y-1;
+
+					if(ym >=0){
+						if(xm>=0)
+							temp->neighbors.push_back(&pixels[ym*width+xm]);
+						temp->neighbors.push_back(&pixels[ym*width+x]);
+						if(xp<width)
+							temp->neighbors.push_back(&pixels[ym*width+xp]);
+					}
+					if(xm>=0){
+						temp->neighbors.push_back(&pixels[y*width+xm]);
+						if(yp<height){
+							temp->neighbors.push_back(&pixels[yp*width+xm]);
+						}
+					}
+					if(yp< height){
+						temp->neighbors.push_back(&pixels[yp*width+x]);
+						if(xp<width){
+							temp->neighbors.push_back(&pixels[yp*width+xp]);
+						}
+					}
+					if(xp<width){
+						temp->neighbors.push_back(&pixels[y*width+xp]);
+					}
                 }
-            }
+			}
+            
             #ifdef DEBUG
             std::cout<<"Sorting"<< std::endl;
             #endif
@@ -214,7 +236,7 @@ class Watershed
                             fifo_queue.pop();
                             for(auto n:pop.neighbors){
                                 if(n.get_state()  == Pixel3d::STATE_VISITED){
-                                    n.get_state()  == current_state;
+                                    n.set_state(current_state);
                                     fifo_queue.push(n);
                                 }
                             }

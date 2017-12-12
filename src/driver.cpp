@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include "./pgm.hpp"
-#include "./watershed.hpp"
+#include "./watershed2.hpp"
 
 int main(int argc, char *argv[]){
 	if( argc <4){
@@ -26,9 +26,10 @@ int main(int argc, char *argv[]){
 	std::vector<unsigned char> result;
 	UWM::PGM().read(source_image, image, x_dimension, y_dimension);
 	std::cout<<"Running watershed"<<std::endl;
-	betacore::Watershed w(image,y_dimension,x_dimension,mask_size,result);
+	betacore::watershed2 w(image,y_dimension,x_dimension,mask_size);
 	std::cout<<"Done with watershed!"<<std::endl;
 	std::cout<<"Saving..."<<std::endl;
+	w.get_filter(result);
 	UWM::PGM().write(result_image,result.data(),x_dimension,y_dimension);
 	std::cout<<"Saving Completed"<<std::endl;
 	std::cout<<w.to_string()<<std::endl;

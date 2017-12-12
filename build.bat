@@ -46,4 +46,4 @@ set file_name=driver
 echo building %file_name%
 set compilerflags=/Fo.\bin\ /Od /Zi /EHsc 
 set linkerflags=/OUT:bin\%file_name%.exe
-cl.exe %compilerflags% source/%file_name%.cpp /link %linkerflags%
+cl.exe %compilerflags% src/%file_name%.cpp /link %linkerflags%
