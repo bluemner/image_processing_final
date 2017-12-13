@@ -32,6 +32,7 @@ class watershed2
 		std::queue<watershed_pixel*> fifo_queue;
 		watershed_pixel DUMMY;
 		watershed_pixel *dummy;
+		bool split;
 		void setup(){
 			sorted_pixels.resize(PIXEL_MAX);
 			// for(size_t i=(size_t) PIXEL_MIN; i < (size_t) PIXEL_MAX; ++i ){
@@ -100,9 +101,9 @@ class watershed2
 						{
 							if (neighbor->state > 0)
 							{
-								// the commented condition is also in the original algorithm 
-								// but it also gives incomplete borders
-								if (p->state == watershed_pixel::STATE_VISITED /*|| p.Label == WatershedCommon.WSHED*/) 
+							
+								if (p->state == watershed_pixel::STATE_VISITED || ( p->state == watershed_pixel::STATE_WATERSHED && this->split )
+								)
 									p->state = neighbor->state;
 								else if (p->state != neighbor->state)
 								{
@@ -161,7 +162,16 @@ class watershed2
 
 			 }
 		 }
-		 
+		bool neighbor_is_watershed(int x,int y){
+			auto pixel = pixels[offset(x,y)];
+			for(auto neighbor :  neighbors(*pixel))
+			{
+				if(neighbor->state == watershed_pixel::STATE_WATERSHED){
+					return true;
+				}
+			}
+			return false;
+		}
 
 		 std::vector<watershed_pixel*> neighbors(watershed_pixel &px){
 			 
@@ -221,7 +231,8 @@ class watershed2
 		watershed2(const std::vector<unsigned char> &image,
 				  int height,
 				  int width,
-				  int neighborhood){
+				  int neighborhood,
+				  bool split =false ){
 			std::copy(image.begin(), image.end(),std::back_inserter(this->image));
 			this->width = width;
 			this->height = height;
@@ -229,10 +240,19 @@ class watershed2
 			//this->result = &result;
 			this->watershed_count = 0;
 			this->current_state =0;
+			this->split = split;
 			dummy=new watershed_pixel();
 			setup();
 			segment();
 		   
+		}
+		~watershed2(){
+			for(size_t i=0; i< pixels.size(); i++){
+				delete pixels.at(i);
+				pixels.at(i)= nullptr;
+			}
+			pixels.clear();
+			pixels.empty();
 		}
 		int offset(int x,int y){
 			return y*width+x;
@@ -245,7 +265,7 @@ class watershed2
 			// result <<" max:"<< this->pixels[pixels.size()-1].to_string();
 			return  result.str();
 		}
-
+	
 		void get_filter(std::vector<unsigned char> &filter){
 		
 			for (int y = 0; y < this->height; y++)

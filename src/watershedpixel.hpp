@@ -24,6 +24,7 @@ public:
         this->state = STATE_DUMMY;
         this->distance= STATE_DUMMY;
     }
+    
     watershed_pixel(int x, int y,int height){
         this->x =x;
         this->y =y;
@@ -31,6 +32,7 @@ public:
         this->state = STATE_INI;
         this->distance =0;
     }
+    
     bool operator==(const watershed_pixel &other)const {
         return (this->x == other.x && this->y == other.y);
     }

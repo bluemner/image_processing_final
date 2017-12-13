@@ -205,7 +205,6 @@ namespace UWM
 			const int &x_dimension,
 			const int &y_dimension)
 		{
-
 			if (vector_image.empty())
 				throw "no image found";
 			FILE *fp;
