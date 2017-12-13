@@ -100,7 +100,7 @@ int main(int argc, char *argv[]){
 	std::vector<unsigned char> temp;
 	temp.resize(x_dimension*y_dimension);
 	for(size_t i=0; i< image.size(); ++i){
-		temp[i] = image[i] * result[i];
+		temp[i] = (result[i] == 255) image[i]:0 ;
 	}
 	UWM::PGM().write(result_image,temp.data(),x_dimension,y_dimension);
 	for(size_t i=0; i< image.size(); ++i){
